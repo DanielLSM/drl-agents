@@ -19,12 +19,9 @@ class SimpleAgent(BaseAgent):
         pass
 
     def act(self, obs):
-        #how to declare the method here
-        # BaseAgent
         pass
 
 
 if __name__ == '__main__':
 
-    BA = BaseAgent()
     SA = SimpleAgent()

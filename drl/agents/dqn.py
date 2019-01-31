@@ -15,15 +15,17 @@ class DQNAgent(BaseAgent):
 
     #here we build the notes of our DQN agent
     def __init__(self,
+                 observation_space,
+                 action_space,
                  seed=None,
-                 observation_space=None,
-                 action_space=None,
                  lr=5e-4,
                  gamma=1.0,
                  **kwargs):
+        """ Builds  """
 
         sess = get_session()
-        set_seeds(seed)
+        if seed:
+            set_seeds(seed)
 
     def act(self, observation):
         """ Agent acts by delivering an action from an observation """

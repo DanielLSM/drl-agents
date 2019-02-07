@@ -7,7 +7,13 @@ from drl.tools.math_util import *
 from drl.tools.tf_util import *
 
 
-def q_mlp(hiddens, input_, num_actions, scope, reuse=False, layer_norm=False):
+#TODO: inputting a different activation than tf.nn.relu would make sense
+def q_mlp(hiddens,
+          input_,
+          num_actions,
+          scope='action_value_function',
+          reuse=False,
+          layer_norm=False):
     with tf.variable_scope(scope, reuse=reuse):
         out = input_
         for hidden in hiddens:
@@ -19,3 +25,13 @@ def q_mlp(hiddens, input_, num_actions, scope, reuse=False, layer_norm=False):
         q_out = layers.fully_connected(
             out, num_outputs=num_actions, activation_fn=None)
         return q_out
+
+
+def q_target_update(q_vars, qt_vars):
+    update_target_expr = []
+    for var, var_target in zip(
+            sorted(q_vars, key=lambda v: v.name),
+            sorted(qt_vars, key=lambda v: v.name)):
+        update_target_expr.append(var_target.assign(var))
+    update_target_expr = tf.group(*update_target_expr)
+    return update_target_expr

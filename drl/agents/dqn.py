@@ -126,19 +126,31 @@ class DQNAgent(BaseAgent):
         self.td_error = self.q_value_old - tf.stop_gradient(self.q_value_new)
         self.errors = 0.5 * tf.square(self.td_error)
         # mean squared td_erors = (1/2) * (TD(0))
-        #TODO: we could use huber_loss
 
+        #TODO: we could use huber_loss
         # we minimize the mean of these weights, unless weights are assigned
         # to this errors
         self.weighted_error = tf.reduce_mean(
             self.importance_sample_weights * self.errors)
 
+        #TODO: gradient normalization is left as an additional exercise
+        optimizer = tf.train.AdamOptimizer(learning_rate=self._lr)
+        self.optimize = optimizer.minimize(
+            self.weighted_error, var_list=self.q_mlp_vars)
+
         # ================================================================
-        # Update q_mlp_target_vars with q_mlp_vars
+        # Pointer update q_mlp_target_vars with q_mlp_vars
         # ================================================================
 
         self.q_update_target_vars = q_target_update(self.q_mlp_vars,
                                                     self.q_mlp_target_vars)
+
+        # ================================================================
+        # Finalize graph and initiate all variables
+        # ================================================================
+
+        get_session().graph.finalize()
+        get_session().run(tf.initialize_all_variables())
 
         print("### agent graph finalized and ready to use! ###")
 
@@ -147,9 +159,16 @@ class DQNAgent(BaseAgent):
         return get_session().run(
             self.argmax_q_values, feed_dict={self.obs_input_node: observation})
 
-    def train(self, batch_training=False):
+    def train(self, batch, batch_training=False):
         """ Train the agent according a batch or step """
-        pass
+        feed_dict = {
+            self.obs_input_node: batch[0],
+            self.action: batch[1],
+            self.obs_input_node_target_net: batch[2], #next observation
+            self.reward: batch[3],
+            self.done: batch[4]
+        }
+        get_session().run([self.optimize], feed_dict=feed_dict)
 
 
 if __name__ == '__main__':

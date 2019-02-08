@@ -164,11 +164,17 @@ class DQNAgent(BaseAgent):
         feed_dict = {
             self.obs_input_node: batch[0],
             self.action: batch[1],
-            self.obs_input_node_target_net: batch[2], #next observation
+            self.obs_input_node_target_net: batch[2],  #next observation
             self.reward: batch[3],
             self.done: batch[4]
         }
         get_session().run([self.optimize], feed_dict=feed_dict)
+
+    def save(self):
+        raise NotImplementedError
+
+    def load(self):
+        raise NotImplementedError
 
 
 if __name__ == '__main__':

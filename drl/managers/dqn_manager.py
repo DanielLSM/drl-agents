@@ -13,7 +13,10 @@ class DQNManager(Manager):
         from drl.core.memory import ReplayBuffer
         self.memory = ReplayBuffer
 
-    def run(self, episodes):
+    def run(self, episodes=1):
+        raise NotImplementedError
+
+    def test(self, episodes=1, render=False):
         raise NotImplementedError
 
     def save(self):

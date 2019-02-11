@@ -152,7 +152,7 @@ class DQNAgent(BaseAgent):
         get_session().graph.finalize()
         get_session().run(tf.initialize_all_variables())
 
-        print("### agent graph finalized and ready to use! ###")
+        print("### agent graph finalized and ready to use!!! ###")
 
     def act(self, observation):
         """ Agent acts by delivering an action from an observation """

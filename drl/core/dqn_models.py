@@ -12,7 +12,7 @@ def q_mlp(hiddens,
           input_,
           num_actions,
           scope='action_value_function',
-          reuse=False,
+          reuse=None,
           layer_norm=False):
     with tf.variable_scope(scope, reuse=reuse):
         out = input_

@@ -197,12 +197,18 @@ class DQNAgent(BaseAgent):
 
     def train(self, batch, batch_training=False):
         """ Train the agent according a batch or step """
+        import ipdb
+        ipdb.set_trace()
+        obs, action, new_obs, reward, done = batch
+        obs = adjust_shape(self.obs_input_node, obs)
+        new_obs = adjust_shape(self.obs_input_node_target_net, new_obs)
+
         feed_dict = {
-            self.obs_input_node: batch[0],
-            self.action: batch[1],
-            self.obs_input_node_target_net: batch[2],  #next observation
-            self.reward: batch[3],
-            self.done: batch[4]
+            self.obs_input_node: obs,
+            self.action: action,
+            self.obs_input_node_target_net: new_obs,  #next observation
+            self.reward: reward,
+            self.done: done
         }
         get_session().run([self.optimize], feed_dict=feed_dict)
 
@@ -226,22 +232,32 @@ if __name__ == '__main__':
     # import ipdb
     # ipdb.set_trace()
     agent = DQNAgent(obs_space, action_space)
-    sample = env.reset()
-    sample1 = env.reset()
-    lsample = []
-    lsample.append(sample)
-    lsample.append(sample1)
+    obs = env.reset()
+    # sample1 = env.reset()
+    # lsample = []
+    # lsample.append(sample)
+    # lsample.append(sample1)
 
     # observation is of shape [N,].
     # [None] is an alias for creating a new axis
     # https://stackoverflow.com/questions/37867354/in-numpy-what-does-selection-by-none-do
 
-    # import ipdb
-    # ipdb.set_trace()
-    action = agent.act(sample, stochastic=True, new_epsilon=0.5)
+    action = agent.act(obs, stochastic=True, new_epsilon=0.5)
     action_d, action_s, new_epsilon = action
     print(action)
     print(
         "action deterministic {}, action_stochastic {}, new_epsilon {}".format(
             action_d, action_s, new_epsilon))
     print(np.array([1, 1]))
+    # import ipdb
+    # ipdb.set_trace()
+    action = env.action_space.sample()
+    new_obs, reward, done, info = env.step(action)
+    batch = []
+    batch.append(obs)
+    batch.append(action)
+    batch.append(new_obs)
+    batch.append(reward)
+    batch.append(done)
+
+    agent.train(batch)

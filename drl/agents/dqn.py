@@ -206,12 +206,11 @@ class DQNAgent(BaseAgent):
     def train(self, batch, batch_training=False):
         """ Train the agent according a batch or step """
         print(batch)
-        obs, action, new_obs, reward, done = batch
+        obs, action, reward, next_obs, done = batch
         obs = adjust_shape(self.obs_input_node, obs)
         reward = adjust_shape(self.reward, reward)
         new_obs = adjust_shape(self.obs_input_node_target_net, new_obs)
         done = adjust_shape(self.done, done)
-
 
         feed_dict = {
             self.obs_input_node: obs,
@@ -267,8 +266,10 @@ if __name__ == '__main__':
     batch = []
     batch.append(obs)
     batch.append(action)
-    batch.append(new_obs)
     batch.append(np.array(reward))
+    batch.append(new_obs)
     batch.append(np.array(float(done)))
+    # np.ones_like(rewards) on deepq/py
+    # weights, batch_idxes = np.ones_like(rewards), None
     print(batch)
     agent.train(batch)

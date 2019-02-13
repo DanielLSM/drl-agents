@@ -53,6 +53,8 @@ class DQNAgent(BaseAgent):
                 dtype=obs_dtype,
                 name="observation_input_target_net")
 
+            #Tensorflow shapes XDDDDDDD
+            # https://stackoverflow.com/questions/46940857/what-is-the-difference-between-none-none-and-for-the-shape-of-a-placeh
             self.action = tf.placeholder(
                 shape=act_shape, dtype=act_dtype, name="action_input")
             self.reward = tf.placeholder(
@@ -129,9 +131,11 @@ class DQNAgent(BaseAgent):
 
             #TODO: we could use huber_loss
             # we minimize the mean of these weights, unless weights are assigned
-            # to this errors
-            self.weighted_error = tf.reduce_mean(
-                self.importance_sample_weights * self.errors)
+            # to this errors, for now, will not weight samples...
+            # self.weighted_error = tf.reduce_mean(
+            #     self.importance_sample_weights * self.errors)
+
+            self.weighted_error = tf.reduce_mean(self.errors)
 
             #TODO: gradient normalization is left as an additional exercise
             optimizer = tf.train.AdamOptimizer(learning_rate=self._lr)
@@ -148,6 +152,10 @@ class DQNAgent(BaseAgent):
             # Action and exploration nodes
             # ================================================================
             # deterministic actions
+            # yes, there is a difference between () and [None], [None] is for
+            # 1-D arrays, () is for a single scalar value.
+            # https://stackoverflow.com/questions/46940857/what-is-the-difference-between-none-none-and-for-the-shape-of-a-placeh
+            # yes this is actually interesting
             self.argmax_q_values = tf.argmax(self.q_values, axis=1)
             self.stochastic = tf.placeholder(tf.bool, (), name="stochastic")
             self.new_epsilon = tf.placeholder(tf.float32, (), name="n_epsilon")
@@ -197,11 +205,13 @@ class DQNAgent(BaseAgent):
 
     def train(self, batch, batch_training=False):
         """ Train the agent according a batch or step """
-        import ipdb
-        ipdb.set_trace()
+        print(batch)
         obs, action, new_obs, reward, done = batch
         obs = adjust_shape(self.obs_input_node, obs)
+        reward = adjust_shape(self.reward, reward)
         new_obs = adjust_shape(self.obs_input_node_target_net, new_obs)
+        done = adjust_shape(self.done, done)
+
 
         feed_dict = {
             self.obs_input_node: obs,
@@ -253,11 +263,12 @@ if __name__ == '__main__':
     # ipdb.set_trace()
     action = env.action_space.sample()
     new_obs, reward, done, info = env.step(action)
+    print(reward)
     batch = []
     batch.append(obs)
     batch.append(action)
     batch.append(new_obs)
-    batch.append(reward)
-    batch.append(done)
-
+    batch.append(np.array(reward))
+    batch.append(np.array(float(done)))
+    print(batch)
     agent.train(batch)

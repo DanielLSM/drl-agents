@@ -205,12 +205,15 @@ class DQNAgent(BaseAgent):
 
     def train(self, batch, batch_training=False):
         """ Train the agent according a batch or step """
-        print(batch)
         obs, action, reward, next_obs, done = batch
         obs = adjust_shape(self.obs_input_node, obs)
+        action = adjust_shape(self.action, action)
         reward = adjust_shape(self.reward, reward)
-        new_obs = adjust_shape(self.obs_input_node_target_net, new_obs)
+        new_obs = adjust_shape(self.obs_input_node_target_net, next_obs)
         done = adjust_shape(self.done, done)
+
+        # import ipdb
+        # ipdb.set_trace()
 
         feed_dict = {
             self.obs_input_node: obs,

@@ -19,8 +19,8 @@ def q_mlp(hiddens,
         for hidden in hiddens:
             out = layers.fully_connected(
                 out, num_outputs=hidden, activation_fn=None)
-            if layer_norm:
-                out = layers.layer_norm(out, center=True, scale=True)
+            # if layer_norm:
+            #     out = layers.layer_norm(out, center=True, scale=True)
             out = tf.nn.relu(out)
         q_out = layers.fully_connected(
             out, num_outputs=num_actions, activation_fn=None)

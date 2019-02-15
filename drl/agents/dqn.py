@@ -9,6 +9,7 @@ from drl.core.base import BaseAgent
 
 from drl.tools.tf_util import get_session, get_placeholder, adjust_shape
 from drl.core.dqn_models import q_mlp, q_target_update
+from drl.tools.math_util import huber_loss
 
 # from drl.tools.misc_util import set_seeds
 
@@ -56,7 +57,7 @@ class DQNAgent(BaseAgent):
             #Tensorflow shapes XDDDDDDD
             # https://stackoverflow.com/questions/46940857/what-is-the-difference-between-none-none-and-for-the-shape-of-a-placeh
             self.action = tf.placeholder(
-                shape=act_shape, dtype=act_dtype, name="action_input")
+                shape=[None], dtype=tf.int64, name="action_input")
             self.reward = tf.placeholder(
                 shape=[None], dtype=tf.float32, name="reward_input")
 
@@ -85,7 +86,7 @@ class DQNAgent(BaseAgent):
 
             self.q_values_target = q_mlp(
                 hiddens,
-                self.obs_input_node,
+                self.obs_input_node_target_net,
                 num_actions,
                 scope='action_value_function_target')
 
@@ -126,7 +127,8 @@ class DQNAgent(BaseAgent):
             # td_error TD(0) = Q_old - Q_new
             self.td_error = self.q_value_old - tf.stop_gradient(
                 self.q_value_new)
-            self.errors = 0.5 * tf.square(self.td_error)
+            self.errors = huber_loss(self.td_error)
+            # self.errors = 0.5 * tf.square(self.td_error)
             # mean squared td_erors = (1/2) * (TD(0))
 
             #TODO: we could use huber_loss
@@ -205,16 +207,17 @@ class DQNAgent(BaseAgent):
 
     def train(self, batch, batch_training=False):
         """ Train the agent according a batch or step """
-        obs, action, reward, next_obs, done = batch
-        obs = adjust_shape(self.obs_input_node, obs)
-        action = adjust_shape(self.action, action)
-        reward = adjust_shape(self.reward, reward)
-        new_obs = adjust_shape(self.obs_input_node_target_net, next_obs)
-        done = adjust_shape(self.done, done)
 
+        obs, action, reward, next_obs, done = batch
         # import ipdb
         # ipdb.set_trace()
+        obs = adjust_shape(self.obs_input_node, obs)
+        action = adjust_shape(self.action, action)
+        new_obs = adjust_shape(self.obs_input_node_target_net, next_obs)
+        reward = adjust_shape(self.reward, reward)
+        done = adjust_shape(self.done, done)
 
+        # print(done)
         feed_dict = {
             self.obs_input_node: obs,
             self.action: action,
@@ -222,10 +225,12 @@ class DQNAgent(BaseAgent):
             self.reward: reward,
             self.done: done
         }
-        get_session().run([self.optimize], feed_dict=feed_dict)
+        return get_session().run(
+            [self.optimize, self.td_error, self.q_mlp_vars],
+            feed_dict=feed_dict)
 
     def update_target_nets(self):
-        get_session().run([self.q_mlp_target_vars])
+        get_session().run([self.q_update_target_vars])
 
     def save(self):
         raise NotImplementedError

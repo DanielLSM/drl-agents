@@ -16,6 +16,7 @@ class Manager(ABC):
         self.batch_size = kwargs['batch_size']
         self.max_steps_per_episode = kwargs['max_steps_per_episode']
         self.target_network_update_freq = kwargs['target_network_update_freq']
+        self.render_freq = kwargs['render_freq']
         self.total_steps = 0
         self.epsilon = 1.0
 

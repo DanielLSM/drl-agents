@@ -53,11 +53,14 @@ class DQNManager(Manager):
             action = self.agent.act(obs)
             next_obs, reward, done, _info = env.step(action)
             self.memory.add(obs, action, reward, next_obs, float(done))
+            obs = next_obs
             if render:
                 self.env.render()
             if self.total_steps % self.train_freq:
                 self._train_agent()
-
+            self.total_steps += 1
+            if done:
+                break
         return total_reward
 
     def _train_agent(self):

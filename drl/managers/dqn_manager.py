@@ -55,8 +55,10 @@ class DQNManager(Manager):
         t0 = time.time()
         for _ in range(episodes):
             t1 = time.time()
-            total_reward, steps = self._rollout(
-                render=not bool(_ % self.render_freq))
+            # total_reward, steps = self._rollout(
+            #     render=not bool(_ % self.render_freq))
+            total_reward, steps = self._rollout(render=False)
+
             self._pprint_episode(_, steps, total_reward, t1, t0)
             self.plotter.add_points(_, total_reward)
             self.plotter.show()
@@ -71,9 +73,10 @@ class DQNManager(Manager):
             argmax_q_values, action, new_epsilon = self.agent.act(
                 obs, new_epsilon=self.epsilon)
             # print("argmax {}, action{}".format(argmax_q_values, action))
-            next_obs, reward, done, _info = env.step(action[0])
+            next_obs, reward, done, _info = self.env.step(action[0])
             self.memory.add(obs, action[0], reward, next_obs, float(done))
             obs = next_obs
+            print(_)
             self._render_train_update(render)
             steps += 1
             self.total_steps += 1
@@ -137,15 +140,23 @@ class DQNManager(Manager):
 
 if __name__ == "__main__":
 
-    env = gym.make("CartPole-v0")
-    # parameteres_default_file = "/home/daniel/local-dev/schedule-sim/schedule_sim/envs/config/task_day_custom.yaml"
-
-    # env = TaskDay(
-    #     parameters_file=parameteres_default_file, reward_scale=10, debug=1)
+    # env = gym.make("CartPole-v0")
+    parameteres_default_file = "/home/daniel/local-dev/schedule-sim/schedule_sim/envs/config/task_day_custom.yaml"
+    render_file = "/home/daniel/local-dev/schedule-sim/schedule_sim/envs/config/render_options.yaml"
+    env1 = TaskDay(
+        parameters_file=parameteres_default_file,
+        reward_scale=10,
+        debug=1,
+        rendering=True,
+        render_file=render_file)
     experiment_config = {}
     # import ipdb
+    # # ipdb.set_trace()
+    obs1 = env1.reset()
+    # obs2 = env.reset()
+    # import ipdb
     # ipdb.set_trace()
-    manager = DQNManager(env, experiment_config)
+    manager = DQNManager(env1, experiment_config)
     manager.run(episodes=5000)
     # manager.test(episodes=1, render=1)
     # manager.save_agent()

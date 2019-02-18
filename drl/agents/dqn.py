@@ -164,6 +164,8 @@ class DQNAgent(BaseAgent):
             self.epsilon = tf.get_variable(
                 "epsilon", (), initializer=tf.constant_initializer(0))
             self.size_obs_batch = tf.shape(self.obs_input_node)[0]
+
+
             self.random_actions = tf.random_uniform(
                 tf.stack([self.size_obs_batch]),
                 minval=0,
@@ -209,8 +211,6 @@ class DQNAgent(BaseAgent):
         """ Train the agent according a batch or step """
 
         obs, action, reward, next_obs, done = batch
-        # import ipdb
-        # ipdb.set_trace()
         obs = adjust_shape(self.obs_input_node, obs)
         action = adjust_shape(self.action, action)
         new_obs = adjust_shape(self.obs_input_node_target_net, next_obs)

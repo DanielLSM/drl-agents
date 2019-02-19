@@ -26,7 +26,7 @@ class DQNManager(Manager):
                  batch_size=32,
                  target_network_update_freq=500,
                  max_steps_per_episode=10000,
-                 render_freq=10,
+                 render_freq=100,
                  **kwargs):
         Manager.__init__(**locals())
         self.env = env
@@ -55,9 +55,9 @@ class DQNManager(Manager):
         t0 = time.time()
         for _ in range(episodes):
             t1 = time.time()
-            # total_reward, steps = self._rollout(
-            #     render=not bool(_ % self.render_freq))
-            total_reward, steps = self._rollout(render=False)
+            total_reward, steps = self._rollout(
+                render=not bool(_ % self.render_freq))
+            # total_reward, steps = self._rollout(render=False)
 
             self._pprint_episode(_, steps, total_reward, t1, t0)
             self.plotter.add_points(_, total_reward)
@@ -76,7 +76,6 @@ class DQNManager(Manager):
             next_obs, reward, done, _info = self.env.step(action[0])
             self.memory.add(obs, action[0], reward, next_obs, float(done))
             obs = next_obs
-            print(_)
             self._render_train_update(render)
             steps += 1
             self.total_steps += 1

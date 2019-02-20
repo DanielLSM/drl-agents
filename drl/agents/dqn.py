@@ -19,7 +19,7 @@ class DQNAgent(BaseAgent):
     def __init__(self,
                  observation_space,
                  action_space,
-                 hiddens=[512],
+                 hiddens=[256, 256],
                  seed=None,
                  lr=5e-4,
                  gamma=1.0,
@@ -164,7 +164,6 @@ class DQNAgent(BaseAgent):
             self.epsilon = tf.get_variable(
                 "epsilon", (), initializer=tf.constant_initializer(0))
             self.size_obs_batch = tf.shape(self.obs_input_node)[0]
-
 
             self.random_actions = tf.random_uniform(
                 tf.stack([self.size_obs_batch]),

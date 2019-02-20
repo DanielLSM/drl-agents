@@ -18,7 +18,7 @@ class DQNManager(Manager):
                  lr=5e-4,
                  gamma=1.0,
                  buffer_size=50000,
-                 total_timesteps=100000,
+                 total_timesteps=1000000,
                  exploration_fraction=0.1,
                  final_epsilon=0.02,
                  learning_starts=1000,
@@ -30,9 +30,10 @@ class DQNManager(Manager):
                  **kwargs):
         Manager.__init__(**locals())
         self.env = env
-        obs_space = env.observation_space
-        action_space = env.action_space
-        self.agent = DQNAgent(obs_space, action_space)
+        self.obs_space = env.observation_space
+        self.action_space = env.action_space
+
+        self.agent = DQNAgent(self.obs_space, self.action_space)
         self.memory = ReplayBuffer(self.buffer_size)
         self.plotter = Plotter(
             num_lines=1,
@@ -54,17 +55,21 @@ class DQNManager(Manager):
     def run(self, episodes=1, render=False):
         t0 = time.time()
         for _ in range(episodes):
+            print_render = not bool(_ % self.render_freq)
             t1 = time.time()
-            total_reward, steps = self._rollout(
-                render=not bool(_ % self.render_freq))
+            total_reward, steps, info = self._rollout(render=print_render)
             # total_reward, steps = self._rollout(render=False)
-
+            if print_render:
+                for key, value in info.items():
+                    print("task: {} performed: {}".format(key, value))
             self._pprint_episode(_, steps, total_reward, t1, t0)
             self.plotter.add_points(_, total_reward)
             self.plotter.show()
 
     def _rollout(self, render=False):
-
+        info = {}
+        for _ in range(self.action_space.n):
+            info[_] = 0
         obs = self.env.reset()
         total_reward = 0.
         steps = 0
@@ -74,6 +79,7 @@ class DQNManager(Manager):
                 obs, new_epsilon=self.epsilon)
             # print("argmax {}, action{}".format(argmax_q_values, action))
             next_obs, reward, done, _info = self.env.step(action[0])
+            info[action[0]] += 1
             self.memory.add(obs, action[0], reward, next_obs, float(done))
             obs = next_obs
             self._render_train_update(render)
@@ -82,7 +88,7 @@ class DQNManager(Manager):
             total_reward += reward
             if done:
                 break
-        return total_reward, steps
+        return total_reward, steps, info
 
     def _is_training(self):
         return self.total_steps > self.learning_starts and \

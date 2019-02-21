@@ -60,6 +60,8 @@ class DQNManager(Manager):
             total_reward, steps, info = self._rollout(render=print_render)
             # total_reward, steps = self._rollout(render=False)
             if print_render:
+                import ipdb
+                ipdb.set_trace()
                 for key, value in info.items():
                     print("task: {} performed: {}".format(key, value))
             self._pprint_episode(_, steps, total_reward, t1, t0)

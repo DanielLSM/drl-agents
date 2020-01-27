@@ -15,11 +15,10 @@ from drl.tools.math_util import huber_loss
 
 
 class DQNAgent(BaseAgent):
-
     def __init__(self,
                  observation_space,
                  action_space,
-                 hiddens=[256, 256],
+                 hiddens=[24, 24],
                  seed=None,
                  lr=5e-4,
                  gamma=1.0,
@@ -44,56 +43,48 @@ class DQNAgent(BaseAgent):
         # ================================================================
 
         with tf.variable_scope('dqn_vars', reuse=None):
-            self.obs_input_node = tf.placeholder(
-                shape=(batch_size,) + obs_shape,
-                dtype=obs_dtype,
-                name="observation_input")
+            self.obs_input_node = tf.placeholder(shape=(batch_size, ) + obs_shape,
+                                                 dtype=obs_dtype,
+                                                 name="observation_input")
 
-            self.obs_input_node_target_net = tf.placeholder(
-                shape=(batch_size,) + obs_shape,
-                dtype=obs_dtype,
-                name="observation_input_target_net")
+            self.obs_input_node_target_net = tf.placeholder(shape=(batch_size, ) + obs_shape,
+                                                            dtype=obs_dtype,
+                                                            name="observation_input_target_net")
 
             #Tensorflow shapes XDDDDDDD
             # https://stackoverflow.com/questions/46940857/what-is-the-difference-between-none-none-and-for-the-shape-of-a-placeh
-            self.action = tf.placeholder(
-                shape=[None], dtype=tf.int64, name="action_input")
-            self.reward = tf.placeholder(
-                shape=[None], dtype=tf.float32, name="reward_input")
+            self.action = tf.placeholder(shape=[None], dtype=tf.int64, name="action_input")
+            self.reward = tf.placeholder(shape=[None], dtype=tf.float32, name="reward_input")
 
             self.done = tf.placeholder(tf.float32, [None], name="done")
-            self.importance_sample_weights = tf.placeholder(
-                tf.float32, [None], name="weights")
+            self.importance_sample_weights = tf.placeholder(tf.float32, [None], name="weights")
 
             # ================================================================
             # Here we construct our action-value function Q
             # this will be an MLP, no CNN needed
             # ================================================================
 
-            self.q_values = q_mlp(
-                hiddens,
-                self.obs_input_node,
-                num_actions,
-                scope='action_value_function')
+            self.q_values = q_mlp(hiddens,
+                                  self.obs_input_node,
+                                  num_actions,
+                                  scope='action_value_function')
 
-            self.q_mlp_vars = tf.get_collection(
-                tf.GraphKeys.GLOBAL_VARIABLES,
-                scope=tf.get_variable_scope().name + "/action_value_function")
+            self.q_mlp_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
+                                                scope=tf.get_variable_scope().name +
+                                                "/action_value_function")
 
             # ================================================================
             # Here we construct our target action-value function Q
             # ================================================================
 
-            self.q_values_target = q_mlp(
-                hiddens,
-                self.obs_input_node_target_net,
-                num_actions,
-                scope='action_value_function_target')
+            self.q_values_target = q_mlp(hiddens,
+                                         self.obs_input_node_target_net,
+                                         num_actions,
+                                         scope='action_value_function_target')
 
-            self.q_mlp_target_vars = tf.get_collection(
-                tf.GraphKeys.GLOBAL_VARIABLES,
-                scope=tf.get_variable_scope().name +
-                "/action_value_function_target")
+            self.q_mlp_target_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,
+                                                       scope=tf.get_variable_scope().name +
+                                                       "/action_value_function_target")
 
             # ================================================================
             # Bellman equation
@@ -112,8 +103,8 @@ class DQNAgent(BaseAgent):
 
             # old estimate
             # Q_old(s_t,a_t)
-            self.q_value_old = tf.reduce_sum(
-                self.q_values * tf.one_hot(self.action, num_actions), 1)
+            self.q_value_old = tf.reduce_sum(self.q_values * tf.one_hot(self.action, num_actions),
+                                             1)
 
             # new estimate
             # Q_new(s_t,a_t) = R(s,a_t) + max_a(Q(s_{t+1},a_t))
@@ -125,8 +116,7 @@ class DQNAgent(BaseAgent):
             self.q_value_new = self.reward + self._gamma * self.q_target_max
 
             # td_error TD(0) = Q_old - Q_new
-            self.td_error = self.q_value_old - tf.stop_gradient(
-                self.q_value_new)
+            self.td_error = self.q_value_old - tf.stop_gradient(self.q_value_new)
             self.errors = huber_loss(self.td_error)
             # self.errors = 0.5 * tf.square(self.td_error)
             # mean squared td_erors = (1/2) * (TD(0))
@@ -141,15 +131,13 @@ class DQNAgent(BaseAgent):
 
             #TODO: gradient normalization is left as an additional exercise
             optimizer = tf.train.AdamOptimizer(learning_rate=self._lr)
-            self.optimize = optimizer.minimize(
-                self.weighted_error, var_list=self.q_mlp_vars)
+            self.optimize = optimizer.minimize(self.weighted_error, var_list=self.q_mlp_vars)
 
             # ================================================================
             # Pointer update q_mlp_target_vars with q_mlp_vars
             # ================================================================
 
-            self.q_update_target_vars = q_target_update(self.q_mlp_vars,
-                                                        self.q_mlp_target_vars)
+            self.q_update_target_vars = q_target_update(self.q_mlp_vars, self.q_mlp_target_vars)
             # ================================================================
             # Action and exploration nodes
             # ================================================================
@@ -161,25 +149,20 @@ class DQNAgent(BaseAgent):
             self.argmax_q_values = tf.argmax(self.q_values, axis=1)
             self.stochastic = tf.placeholder(tf.bool, (), name="stochastic")
             self.new_epsilon = tf.placeholder(tf.float32, (), name="n_epsilon")
-            self.epsilon = tf.get_variable(
-                "epsilon", (), initializer=tf.constant_initializer(0))
+            self.epsilon = tf.get_variable("epsilon", (), initializer=tf.constant_initializer(0))
             self.size_obs_batch = tf.shape(self.obs_input_node)[0]
 
-            self.random_actions = tf.random_uniform(
-                tf.stack([self.size_obs_batch]),
-                minval=0,
-                maxval=num_actions,
-                dtype=tf.int64)
+            self.random_actions = tf.random_uniform(tf.stack([self.size_obs_batch]),
+                                                    minval=0,
+                                                    maxval=num_actions,
+                                                    dtype=tf.int64)
             self.chose_random = tf.random_uniform(
-                tf.stack([self.size_obs_batch]),
-                minval=0,
-                maxval=1,
-                dtype=tf.float32) < self.epsilon
-            self.output_actions = tf.where(
-                self.chose_random, self.random_actions, self.argmax_q_values)
+                tf.stack([self.size_obs_batch
+                          ]), minval=0, maxval=1, dtype=tf.float32) < self.epsilon
+            self.output_actions = tf.where(self.chose_random, self.random_actions,
+                                           self.argmax_q_values)
             self.update_new_epsilon = self.epsilon.assign(
-                tf.cond(self.new_epsilon >= 0, lambda: self.new_epsilon,
-                        lambda: self.epsilon))
+                tf.cond(self.new_epsilon >= 0, lambda: self.new_epsilon, lambda: self.epsilon))
 
             # ================================================================
             # Finalize graph and initiate all variables
@@ -196,10 +179,7 @@ class DQNAgent(BaseAgent):
         obs = adjust_shape(self.obs_input_node, observation)
 
         return get_session().run(
-            [
-                self.argmax_q_values, self.output_actions,
-                self.update_new_epsilon
-            ],
+            [self.argmax_q_values, self.output_actions, self.update_new_epsilon],
             feed_dict={
                 self.obs_input_node: obs,
                 self.new_epsilon: new_epsilon,
@@ -224,9 +204,8 @@ class DQNAgent(BaseAgent):
             self.reward: reward,
             self.done: done
         }
-        return get_session().run(
-            [self.optimize, self.td_error, self.q_mlp_vars],
-            feed_dict=feed_dict)
+        return get_session().run([self.optimize, self.td_error, self.q_mlp_vars],
+                                 feed_dict=feed_dict)
 
     def update_target_nets(self):
         get_session().run([self.q_update_target_vars])
@@ -261,9 +240,8 @@ if __name__ == '__main__':
     action = agent.act(obs, stochastic=True, new_epsilon=0.5)
     action_d, action_s, new_epsilon = action
     print(action)
-    print(
-        "action deterministic {}, action_stochastic {}, new_epsilon {}".format(
-            action_d, action_s, new_epsilon))
+    print("action deterministic {}, action_stochastic {}, new_epsilon {}".format(
+        action_d, action_s, new_epsilon))
     print(np.array([1, 1]))
     # import ipdb
     # ipdb.set_trace()

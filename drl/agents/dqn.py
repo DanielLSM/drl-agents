@@ -18,7 +18,7 @@ class DQNAgent(BaseAgent):
     def __init__(self,
                  observation_space,
                  action_space,
-                 hiddens=[24, 24],
+                 hiddens=[32, 32],
                  seed=None,
                  lr=5e-4,
                  gamma=1.0,
